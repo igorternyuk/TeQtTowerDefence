@@ -1,0 +1,11 @@
+#pragma once
+
+#include <QGraphicsView>
+
+class View : public QGraphicsView
+{
+public:
+    explicit View(QGraphicsScene);
+};
+
+#endif // VIEW_H

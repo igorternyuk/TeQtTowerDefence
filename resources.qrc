@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/gfx">
+        <file>tower.png</file>
+        <file>Missile.png</file>
+    </qresource>
+</RCC>
