@@ -4,7 +4,8 @@
 #include <QGraphicsPixmapItem>
 #include <QGraphicsPolygonItem>
 #include <QPointF>
-#include <projectile.hpp>
+
+class QTimer;
 
 class Tower : public QObject, public QGraphicsPixmapItem
 {
@@ -19,4 +20,13 @@ public:
 
 private:
     QGraphicsPolygonItem *mAttackArea;
+    QGraphicsPixmapItem *mTurret;
+    QPointF mTarget{800, 0};
+    bool mHasTarget{true};
+    //:/gfx/grayTower.png
+    QPixmap mImageProjectile{":/gfx/missile1.png"};
+    QTimer *mTimer;
+private slots:
+    void attackTarget();
+    QPointF getCenter();
 };

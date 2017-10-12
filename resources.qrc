@@ -2,5 +2,8 @@
     <qresource prefix="/gfx">
         <file>tower.png</file>
         <file>Missile.png</file>
+        <file>grayTowerGun.png</file>
+        <file>grayTower.png</file>
+        <file>missile1.png</file>
     </qresource>
 </RCC>

@@ -2,6 +2,8 @@
 
 #include <QWidget>
 #include <QGraphicsView>
+#include <QList>
+#include <QPointF>
 
 /*
  * 1) Дать башням и пулям максимальную дальность
@@ -26,6 +28,7 @@ private:
     const QString mWindowTitle{"TeQtTowerDefence"};
     QGraphicsScene *mScene;
     Tower *mTower;
+    QList<QPointF> mEnemyRoute;
     void centralize();
     void createRoad();
     void createEnemy(const QPointF& pos);
