@@ -1,9 +1,16 @@
 <RCC>
     <qresource prefix="/gfx">
+        <file>Base.png</file>
+        <file>enemy.png</file>
+        <file>greenTowerMissile.png</file>
+        <file>greenTowerTurret.png</file>
+        <file>redTowerMissile.png</file>
+        <file>redTowerTurret.png</file>
         <file>tower.png</file>
-        <file>Missile.png</file>
-        <file>grayTowerGun.png</file>
-        <file>grayTower.png</file>
-        <file>missile1.png</file>
+        <file>yellowTowerMissile.png</file>
+        <file>yellowTowerTurret.png</file>
+        <file>yellowTowerIcon.png</file>
+        <file>greenTowerIcon.png</file>
+        <file>redTowerIcon.png</file>
     </qresource>
 </RCC>

@@ -1,10 +1,13 @@
 #include "game.hpp"
+
 #include "tower.hpp"
+#include "enemy.hpp"
 #include <QApplication>
 #include <QDesktopWidget>
 #include <QGraphicsScene>
 #include <QPixmap>
 #include <QLineF>
+#include <QTimer>
 #include <QGraphicsLineItem>
 #include <QGraphicsPixmapItem>
 #include <QDebug>
@@ -20,15 +23,39 @@ Game::Game(QWidget *parent):
     mScene->setSceneRect(0,0,WINDOW_WIDTH, WINDOW_HEIGHT);
     this->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     this->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    QPixmap towerImage(":/gfx/grayTower.png");
-    mTower = new Tower(150, 150, towerImage, 120, 30);
-    mScene->addItem(mTower);
-    //==============Enemy route===================
-    mEnemyRoute << QPointF(0, WINDOW_HEIGHT) <<
-                   QPointF(WINDOW_WIDTH / 2, 3 * WINDOW_HEIGHT / 4) <<
+
+    //==============Enemy route===================//
+    mEnemyRoute << QPointF(WINDOW_WIDTH, 0) <<
                    QPointF(2 * WINDOW_WIDTH / 3, WINDOW_HEIGHT / 4) <<
-                   QPointF(WINDOW_WIDTH, 0);
+                   QPointF(WINDOW_WIDTH / 2, 3 * WINDOW_HEIGHT / 4) <<
+                   QPointF(0, WINDOW_HEIGHT);
     createRoad();
+
+    //=============Towers=========================//
+    QPixmap towerImage(":/gfx/tower.png");
+    QPixmap turrentImage(":/gfx/greenTowerTurret.png");
+    QPixmap missileImage(":/gfx/greenTowerMissile.png");
+
+    Tower *gTower = new Tower(Tower::Type::GREEN, 150, 150, towerImage, turrentImage,
+                            missileImage, 200, 1000);
+
+    Tower *rTower = new Tower(Tower::Type::RED, 600, 180, QPixmap(":/gfx/tower.png"),
+                                    QPixmap(":/gfx/redTowerTurret.png"),
+                                    QPixmap(":/gfx/redTowerMissile.png"),
+                                    200, 1000);
+
+    Tower *yTower = new Tower(Tower::Type::YELLOW, 560, 450, QPixmap(":/gfx/tower.png"),
+                                    QPixmap(":/gfx/yellowTowerTurret.png"),
+                                    QPixmap(":/gfx/yellowTowerMissile.png"),
+                                    250, 1000);
+    mScene->addItem(gTower);
+    mScene->addItem(rTower);
+    mScene->addItem(yTower);
+
+
+    mEnemyTimer = new QTimer;
+    connect(mEnemyTimer, SIGNAL(timeout()), this, SLOT(createEnemy()));
+    mEnemyTimer->start(2000);
 }
 
 void Game::run()
@@ -53,10 +80,24 @@ void Game::createRoad()
         QGraphicsLineItem *section = new QGraphicsLineItem(line);
         QPen pen;
         pen.setColor(Qt::darkGray);
-        pen.setWidth(40);
+        pen.setWidth(60);
         section->setPen(pen);
         mScene->addItem(section);
     }
+}
+
+void Game::createEnemy()
+{
+    static std::size_t enemyCounter{0u};
+    if(enemyCounter >= mMaxNumOfEnemies)
+    {
+        disconnect(mEnemyTimer, SIGNAL(timeout()), this, SLOT(createEnemy()));
+        return;
+    }
+
+    Enemy *enemy = new Enemy(QPointF(WINDOW_WIDTH, 0), 10, mEnemyRoute);
+    ++enemyCounter;
+    mScene->addItem(enemy);
 }
 
 void Game::mouseReleaseEvent(QMouseEvent *event)

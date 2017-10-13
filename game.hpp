@@ -13,7 +13,7 @@
  * 5)Если хоть один враг проходи в нижний левый угол - поражение
 */
 class QGraphicsScene;
-class Tower;
+class QTimer;
 
 class Game: public QGraphicsView
 {
@@ -27,11 +27,13 @@ protected:
 private:
     const QString mWindowTitle{"TeQtTowerDefence"};
     QGraphicsScene *mScene;
-    Tower *mTower;
     QList<QPointF> mEnemyRoute;
+    std::size_t mMaxNumOfEnemies{25u};
+    QTimer *mEnemyTimer;
     void centralize();
     void createRoad();
     void createEnemy(const QPointF& pos);
-    void createEnemies();
+private slots:
+    void createEnemy();
 };
 

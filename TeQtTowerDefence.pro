@@ -15,22 +15,16 @@ CONFIG += c++1z
 SOURCES += main.cpp\
     tower.cpp \
     game.cpp \
-    projectile.cpp \
     enemy.cpp \
-    redtower.cpp \
-    greentower.cpp \
-    browntower.cpp \
-    buildingmodeicon.cpp
+    buildingmodeicon.cpp \
+    missile.cpp
 
 HEADERS  += \
     game.hpp \
     tower.hpp \
-    projectile.hpp \
-    browntower.hpp \
     enemy.hpp \
-    greentower.hpp \
-    redtower.hpp \
-    buildingmodeicon.hpp
+    buildingmodeicon.hpp \
+    missile.hpp
 
 FORMS    +=
 
