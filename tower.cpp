@@ -11,13 +11,11 @@
 #include <QDebug>
 #include <QLineF>
 #include <QTimer>
+#include "game.hpp"
 
-
-Tower::Tower(Type type, const QPointF &pos, const QPixmap &imgBase,
-             const QPixmap &imgTurret, const QPixmap &imgMissile,
-             float attackRadius, int timerDelay, QObject *parent):
-    Tower(type, pos.x(), pos.y(), imgBase, imgTurret, imgMissile,
-          attackRadius, timerDelay, parent)
+Tower::Tower(Game *game, Type type, const QPointF &pos,
+             QObject *parent):
+    Tower(game, type, pos.x(), pos.y(), parent)
 {}
 
 auto Tower::distanceTo(const QPointF &target) const
@@ -26,27 +24,51 @@ auto Tower::distanceTo(const QPointF &target) const
     return line.length();
 }
 
-Tower::Tower(Type type, float posX, float posY, const QPixmap& imgBase,
-             const QPixmap& imgTurret, const QPixmap &imgMissile,
-             float attackRadius,
-             int timerDelay, QObject *parent):
-    QObject(parent), QGraphicsPixmapItem(), mType{type},
-    mAttackRadius{attackRadius}, mImgMissile{imgMissile}
+Tower::Tower(Game *game, Type type, float posX, float posY, QObject *parent):
+    QObject(parent), QGraphicsPixmapItem(), mGame{game}, mType{type}
 {
-    this->setPixmap(imgBase);
+    this->setPixmap(QPixmap(":/gfx/tower.png"));
     this->setPos(posX, posY);
-    mTurret = new QGraphicsPixmapItem(imgTurret,this);
+    switch (type) {
+    case Type::RED:
+        mAttackRadius = 140;
+        mShootingTimerDelay = 1500;
+        mTurret = new QGraphicsPixmapItem(QPixmap(":/gfx/redTowerTurret.png"),this);
+        mImgMissile = QPixmap(":/gfx/redTowerMissile.png");
+        mMissileVelocity = 8;
+        mMissileDamage = 5;
+        break;
+    case Type::GREEN:
+        mAttackRadius = 135;
+        mShootingTimerDelay = 1300;
+        mTurret = new QGraphicsPixmapItem(QPixmap(":/gfx/greenTowerTurret.png"),this);
+        mImgMissile = QPixmap(":/gfx/greenTowerMissile.png");
+        mMissileVelocity = 12;
+        mMissileDamage = 3;
+        break;
+    case Type::YELLOW:
+        mShootingTimerDelay = 1000;
+        mAttackRadius = 130;
+        mTurret = new QGraphicsPixmapItem(QPixmap(":/gfx/yellowTowerTurret.png"),this);
+        mImgMissile = QPixmap(":/gfx/yellowTowerMissile.png");
+        mMissileVelocity = 7;
+        mMissileDamage = 7;
+        break;
+    default:
+        break;
+    }
     mTurret->setTransformOriginPoint(mTurret->pixmap().width() / 2,
                                      mTurret->pixmap().height() / 2);
-    mAttackArea = new QGraphicsEllipseItem(-attackRadius, -attackRadius,
-                                           2 * attackRadius,
-                                           2 * attackRadius, this);
-    mAttackArea->setPos(imgBase.width() / 2, imgBase.height() / 2);
+    mAttackArea = new QGraphicsEllipseItem(-mAttackRadius, -mAttackRadius,
+                                           2 * mAttackRadius,
+                                           2 * mAttackRadius, this);
+    mAttackArea->setPos(this->pixmap().width() / 2,
+                        this->pixmap().height() / 2);
     mAttackArea->setPen(Qt::DashLine);
 
     mTimer = new QTimer;
     connect(mTimer, SIGNAL(timeout()), this, SLOT(aquireTarget()));
-    mTimer->start(timerDelay);
+    mTimer->start(mShootingTimerDelay);
 }
 
 QPointF Tower::getCenter() const noexcept
@@ -83,10 +105,11 @@ void Tower::aquireTarget()
 
 void Tower::fire()
 {
+    if(mGame->getStatus() != Game::Status::PLAY) return;
     if(!mHasTarget) return;
+
     QLineF firingLine{getCenter(), getCurrentTarget()};
     auto angle = firingLine.angle();
-    //qDebug() << "angle = " << angle;
 
     if(mType == Type::GREEN)
     {
@@ -94,7 +117,10 @@ void Tower::fire()
                  48 * qCos(qDegreesToRadians(angle));
         auto y = getCenter().y() - mImgMissile.height() / 2 -
                  48 * qSin(qDegreesToRadians(angle));
-        Missile *p = new Missile(x, y, 8, getAttackRadius() - 48, 50, mImgMissile);
+        Missile *p = new Missile(mGame, x, y, mMissileVelocity,
+                                 getAttackRadius() -
+                                 POINT_OF_MISSILE_DEPARTURE_OFFSET,
+                                 mMissileDamage, mImgMissile);
         p->setRotation(-angle);
         this->setTurretRotation(-angle);
         scene()->addItem(p);
@@ -106,15 +132,17 @@ void Tower::fire()
         // 5 вверх и 5 вниз от средней линии между стволами получается два
         //прямоугольных треугольника
         QLineF line1{QLineF::fromPolar(40,angle + qRadiansToDegrees(qAsin(5.f/40)))};
-        //qDebug() << "angle1 = " << line1.angle();
         line1.translate(getCenter());
         QLineF line2{QLineF::fromPolar(40,angle - qRadiansToDegrees(qAsin(5.f/40)))};
         line2.translate(getCenter());
-        //qDebug() << "angle2 = " << line2.angle();
-        //qDebug() << "line1.p2() = " << line1.p2();
-        //qDebug() << "line2.p2() = " << line2.p2();
-        Missile *p1 = new Missile(line1.p2(), 8, getAttackRadius() - 48, 25, mImgMissile);
-        Missile *p2 = new Missile(line2.p2(), 8, getAttackRadius() - 48, 25, mImgMissile);
+        Missile *p1 = new Missile(mGame, line1.p2(), mMissileVelocity,
+                                  getAttackRadius() -
+                                  POINT_OF_MISSILE_DEPARTURE_OFFSET,
+                                  mMissileDamage, mImgMissile);
+        Missile *p2 = new Missile(mGame, line2.p2(), mMissileVelocity,
+                                  getAttackRadius() -
+                                  POINT_OF_MISSILE_DEPARTURE_OFFSET,
+                                  mMissileDamage, mImgMissile);
         p1->setPos(p1->x() - p1->pixmap().width() / 2,
                    p1->y() - p1->pixmap().height() / 2);
         p2->setPos(p2->x() - p2->pixmap().width() / 2,
@@ -128,12 +156,24 @@ void Tower::fire()
     else if(mType == Type::YELLOW)
     {
         auto x = getCenter().x() - mImgMissile.width() / 2 +
-                 48 * qCos(qDegreesToRadians(angle));
+                 POINT_OF_MISSILE_DEPARTURE_OFFSET *
+                 qCos(qDegreesToRadians(angle));
         auto y = getCenter().y() - mImgMissile.height() / 2 -
-                 48 * qSin(qDegreesToRadians(angle));
-        Missile *p1 = new Missile(x, y, 8, getAttackRadius() - 48, 30, mImgMissile);
-        Missile *p2 = new Missile(x, y, 8, getAttackRadius() - 48, 30, mImgMissile);
-        Missile *p3 = new Missile(x, y, 8, getAttackRadius() - 48, 30, mImgMissile);
+                 POINT_OF_MISSILE_DEPARTURE_OFFSET *
+                 qSin(qDegreesToRadians(angle));
+        Missile *p1 = new Missile(mGame, x, y, mMissileVelocity,
+                                  getAttackRadius() -
+                                  POINT_OF_MISSILE_DEPARTURE_OFFSET,
+                                  mMissileDamage, mImgMissile);
+        Missile *p2 = new Missile(mGame, x, y, mMissileVelocity,
+                                  getAttackRadius() -
+                                  POINT_OF_MISSILE_DEPARTURE_OFFSET,
+                                  mMissileDamage, mImgMissile);
+        Missile *p3 = new Missile(mGame, x, y, mMissileVelocity,
+                                  getAttackRadius() -
+                                  POINT_OF_MISSILE_DEPARTURE_OFFSET,
+                                  mMissileDamage, mImgMissile);
+        //10 - Угол вылета левого и правого снарядов относительно центрального
         p1->setRotation(-angle + 10);
         p2->setRotation(-angle);
         p3->setRotation(-angle - 10);

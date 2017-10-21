@@ -1,4 +1,5 @@
 #include "enemy.hpp"
+#include "game.hpp"
 #include <QPixmap>
 #include <QGraphicsScene>
 #include <QLineF>
@@ -6,10 +7,10 @@
 #include <QDebug>
 #include <qmath.h>
 
-Enemy::Enemy(const QPointF &pos, float velocity,
-             const QList<QPointF> &mPoints, QGraphicsItem *parent):
-    QObject(), QGraphicsPixmapItem(parent), mVelocity{velocity},
-    mPoints{mPoints}
+Enemy::Enemy(Game *game, const QPointF &pos, float velocity,
+             const QList<QPointF> &mPoints, int price, QGraphicsItem *parent):
+    QObject(), QGraphicsPixmapItem(parent), mGame{game}, mVelocity{velocity},
+    mPoints{mPoints}, mPrice{price}
 {
     QPixmap img(":/gfx/enemy.png");
     this->setPixmap(img);
@@ -21,7 +22,7 @@ Enemy::Enemy(const QPointF &pos, float velocity,
     connect(this, SIGNAL(noHealth()), this, SLOT(destroy()));
     mTimer = new QTimer;
     connect(mTimer, SIGNAL(timeout()), this, SLOT(move()));
-    mTimer->start(TIMER_DELAY);
+    mTimer->start(TIMER_DELAY);   
 }
 
 Enemy::~Enemy()
@@ -32,11 +33,17 @@ Enemy::~Enemy()
 void Enemy::hit(float damage)
 {
     mHealth -= damage;
-    if(mHealth <= 0) emit noHealth();
+    if(mHealth <= 0)
+    {
+        emit awardPlayer(mPrice);
+        emit noHealth();
+    }
 }
 
 void Enemy::move()
 {
+    if(mGame->getStatus() != Game::Status::PLAY)
+        return;
     QLineF heading(pos(), mPoints[mCurrentTargetIndex]);
     auto angle = heading.angle();
     //qDebug() << "heading = " << angle;
@@ -52,6 +59,8 @@ void Enemy::move()
         else
             disconnect(mTimer, SIGNAL(timeout()), this, SLOT(move()));
     }
+
+    mGame->checkGameStatus();
 }
 
 void Enemy::destroy()

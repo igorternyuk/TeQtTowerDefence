@@ -12,5 +12,8 @@
         <file>yellowTowerIcon.png</file>
         <file>greenTowerIcon.png</file>
         <file>redTowerIcon.png</file>
+        <file>greenCursor.png</file>
+        <file>yellowCursor.png</file>
+        <file>redCursor.png</file>
     </qresource>
 </RCC>

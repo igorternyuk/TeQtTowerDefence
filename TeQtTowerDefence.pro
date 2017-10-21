@@ -24,7 +24,8 @@ HEADERS  += \
     tower.hpp \
     enemy.hpp \
     buildingmodeicon.hpp \
-    missile.hpp
+    missile.hpp \
+    texItem.hpp
 
 FORMS    +=
 

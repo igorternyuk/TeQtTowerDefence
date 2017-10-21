@@ -1,4 +1,5 @@
 #include "missile.hpp"
+#include "game.hpp"
 #include "enemy.hpp"
 #include <qmath.h>
 #include <QTimer>
@@ -8,10 +9,11 @@
 #include <QLineF>
 #include <QList>
 
-Missile::Missile(float posX, float posY, float velocity, float maxDistance,
+Missile::Missile(Game *game, float posX, float posY, float velocity, float maxDistance,
                  int damage, const QPixmap &img, QGraphicsItem *parent):
-    QObject(), QGraphicsPixmapItem(parent), mInitPos{QPointF(posX, posY)},
-    mVelocity{velocity}, mMaxDistance{maxDistance}, mDamage{damage}
+    QObject(), QGraphicsPixmapItem(parent), mGame{game},
+    mInitPos{QPointF(posX, posY)}, mVelocity{velocity},
+    mMaxDistance{maxDistance}, mDamage{damage}
 {
     this->setPos(posX, posY);
     this->setPixmap(img);
@@ -20,16 +22,18 @@ Missile::Missile(float posX, float posY, float velocity, float maxDistance,
     connect(this, SIGNAL(maxFlightDistance()), this, SLOT(destroy()));
     connect(mTimer, SIGNAL(timeout()), this, SLOT(move()));
 
-    mTimer->start(50);
+    mTimer->start(MOVE_TIMER_DELAY);
 }
 
-Missile::Missile(const QPointF &pos, float velocity, float maxDistance,
+Missile::Missile(Game *game, const QPointF &pos, float velocity, float maxDistance,
                  int damage, const QPixmap &img, QGraphicsItem *parent):
-    Missile(pos.x(), pos.y(), velocity, maxDistance, damage, img, parent)
+    Missile(game, pos.x(), pos.y(), velocity, maxDistance, damage, img, parent)
 {}
 
 void Missile::move()
 {
+    if(mGame->getStatus() != Game::Status::PLAY)
+        return;
     auto dx = mVelocity * qCos(qDegreesToRadians(rotation()));
     auto dy = mVelocity * qSin(qDegreesToRadians(rotation()));
     this->setPos(x() + dx, y() + dy);
@@ -47,18 +51,16 @@ void Missile::handleCollisionsWithEnemies()
     {
         if(typeid(*e) == typeid(Enemy))
         {
-            //qDebug() << "Collision with enemy";
             Enemy *enemy = static_cast<Enemy*>(e);
-            //e->destroy();
             enemy->hit(this->getDamage());
             this->destroy();
+            break;
         }
     }
 }
 
 void Missile::destroy()
 {
-    //qDebug() << "Projectile was destroyed";
     scene()->removeItem(this);
     delete this;
 }
